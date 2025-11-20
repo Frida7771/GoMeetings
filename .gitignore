@@ -1,0 +1,40 @@
+# Binaries for programs and plugins
+/bin/
+/build/
+/dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go build cache & modules
+/pkg/
+*.test
+*.out
+
+# Vendor
+/vendor/
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+
+# Logs & temp files
+*.log
+*.tmp
+*.cache
+
+# OS files
+.DS_Store
+
+# Environment / config
+.env
+.env.local
+.env.*
+config.yaml
+config.json
+
+# Generated files
+coverage.out
