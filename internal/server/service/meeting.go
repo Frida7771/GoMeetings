@@ -11,7 +11,7 @@ import (
 
 func MeetingCreate(c *gin.Context) {
 	in := MeetingCreateRequest{}
-	err := c.ShouldBindJSON(in)
+	err := c.ShouldBindJSON(&in)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"code": -1,
