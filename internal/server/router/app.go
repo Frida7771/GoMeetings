@@ -20,7 +20,17 @@ func Router() *gin.Engine {
 	auth := r.Group("/auth", middlewares.Auth())
 	//user login
 	auth.POST("/user/login", service.UserLogin)
-	//meeting
+
+	//meeting list
+	auth.GET("/meeting/list", service.MeetingList)
+
+	//meeting create
 	auth.POST("/meeting/create", service.MeetingCreate)
+	//meeting edit
+	auth.PUT("/meeting/edit", service.MeetingEdit)
+
+	//meeting delete
+	auth.DELETE("/meeting/delete", service.MeetingDelete)
+
 	return r
 }
