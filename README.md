@@ -48,12 +48,16 @@ The server runs on `:8080` by default.
 
 - `GET /ping` - Health check
 
-### Authenticated Endpoints
-
-All `/auth/*` endpoints require an `Authorization` token in the request header.
+### Authentication
 
 - `POST /auth/user/login` - User login
+
+### Meeting Management (Requires Authentication)
+
+- `GET /auth/meeting/list` - Get meeting list (query: page, size, keyword)
 - `POST /auth/meeting/create` - Create meeting
+- `PUT /auth/meeting/edit` - Edit meeting
+- `DELETE /auth/meeting/delete` - Delete meeting (query: identity)
 
 ## Project Structure
 
