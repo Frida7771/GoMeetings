@@ -10,6 +10,7 @@ import (
 )
 
 func MeetingCreate(c *gin.Context) {
+	uc := c.MustGet("user_claims").(*helper.UserClaims)
 	in := MeetingCreateRequest{}
 	err := c.ShouldBindJSON(&in)
 	if err != nil {
@@ -23,9 +24,9 @@ func MeetingCreate(c *gin.Context) {
 	err = models.DB.Create(&models.RoomBasic{
 		Identify: helper.GenerateUUID(),
 		Name:     in.Name,
-		BeginAt:  time.UnixMilli(in.CreateAt),
+		BeginAt:  time.UnixMilli(in.BeginAt),
 		EndAt:    time.UnixMilli(in.EndAt),
-		CreateID: 0, //todo:get user id from auth
+		CreateID: uc.Id,
 	}).Error
 
 	if err != nil {
