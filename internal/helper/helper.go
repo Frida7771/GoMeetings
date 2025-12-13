@@ -2,6 +2,8 @@ package helper
 
 import (
 	"GoMeetings/internal/define"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 
 	"crypto/md5"
@@ -53,4 +55,23 @@ func AnalyzeToken(tokenString string) (*UserClaims, error) {
 		return nil, errors.New("token is invalid")
 	}
 	return userClaim, nil
+}
+
+func Encode(obj interface{}) string {
+	b, err := json.Marshal(obj)
+	if err != nil {
+		panic(err)
+	}
+	return base64.StdEncoding.EncodeToString(b)
+}
+
+func Decode(in string, obj interface{}) {
+	b, err := base64.StdEncoding.DecodeString(in)
+	if err != nil {
+		panic(err)
+	}
+	err = json.Unmarshal(b, obj)
+	if err != nil {
+		panic(err)
+	}
 }
