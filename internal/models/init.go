@@ -23,7 +23,7 @@ func NewDB() {
 		panic("failed to connect database: " + err.Error())
 	}
 
-	db.AutoMigrate(&RoomBasic{}, &RoomUser{}, &UserBasic{})
+	db.AutoMigrate(&RoomBasic{}, &RoomUser{}, &UserBasic{}, &RoomScreenShare{})
 
 	DB = db
 }

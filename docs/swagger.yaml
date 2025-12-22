@@ -1,0 +1,502 @@
+basePath: /
+definitions:
+  service.RoomCreateRequest:
+    properties:
+      begin_at:
+        type: integer
+      display_name:
+        type: string
+      end_at:
+        type: integer
+      join_code:
+        type: string
+      name:
+        type: string
+      short_code:
+        type: string
+    required:
+    - begin_at
+    - end_at
+    - name
+    type: object
+  service.RoomEditRequest:
+    properties:
+      begin_at:
+        type: integer
+      end_at:
+        type: integer
+      identity:
+        type: string
+      join_code:
+        type: string
+      name:
+        type: string
+      short_code:
+        type: string
+    required:
+    - begin_at
+    - end_at
+    - identity
+    - name
+    type: object
+  service.RoomJoinRequest:
+    properties:
+      display_name:
+        type: string
+      identity:
+        type: string
+      join_code:
+        type: string
+    required:
+    - display_name
+    - identity
+    - join_code
+    type: object
+  service.RoomLeaveRequest:
+    properties:
+      identity:
+        type: string
+    required:
+    - identity
+    type: object
+  service.ScreenShareStartRequest:
+    properties:
+      identity:
+        type: string
+      stream_id:
+        type: string
+    required:
+    - identity
+    type: object
+  service.ScreenShareStopRequest:
+    properties:
+      identity:
+        type: string
+    required:
+    - identity
+    type: object
+  service.UserLoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  service.UserRegisterRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+info:
+  contact: {}
+  description: Meeting management & WebRTC signaling backend
+  title: GoMeetings API
+  version: "1.0"
+paths:
+  /auth/room/create:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Room payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/service.RoomCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create room
+      tags:
+      - Room
+  /auth/room/delete:
+    delete:
+      parameters:
+      - description: Room identity
+        in: query
+        name: identity
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete room
+      tags:
+      - Room
+  /auth/room/edit:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Room payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/service.RoomEditRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Edit room
+      tags:
+      - Room
+  /auth/room/join:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Join payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/service.RoomJoinRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Join room
+      tags:
+      - Room
+  /auth/room/leave:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Leave payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/service.RoomLeaveRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Leave room
+      tags:
+      - Room
+  /auth/room/list:
+    get:
+      description: Paginated room list with join state
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: size
+        type: integer
+      - description: Keyword filter
+        in: query
+        name: keyword
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Room list
+      tags:
+      - Room
+  /auth/room/members:
+    get:
+      parameters:
+      - description: Room identity
+        in: query
+        name: identity
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Room member list
+      tags:
+      - Room
+  /auth/room/share/start:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Screen share start payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/service.ScreenShareStartRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Start screen sharing
+      tags:
+      - Room
+  /auth/room/share/status:
+    get:
+      parameters:
+      - description: Room identity
+        in: query
+        name: identity
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Screen share status
+      tags:
+      - Room
+  /auth/room/share/stop:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Screen share stop payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/service.ScreenShareStopRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Stop screen sharing
+      tags:
+      - Room
+  /auth/user/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and returns JWT token
+      parameters:
+      - description: Login payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/service.UserLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: User login
+      tags:
+      - Auth
+  /auth/user/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a user account and return JWT
+      parameters:
+      - description: Register payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/service.UserRegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: User register
+      tags:
+      - Auth
+  /ping:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check
+      tags:
+      - Public
+  /ws/p2p/{roomIdentity}/{userIdentity}:
+    get:
+      description: Upgrade HTTP to WebSocket for SDP/ICE exchange
+      parameters:
+      - description: Room identity
+        in: path
+        name: roomIdentity
+        required: true
+        type: string
+      - description: User identity
+        in: path
+        name: userIdentity
+        required: true
+        type: string
+      - description: JWT bearer token
+        in: query
+        name: token
+        required: true
+        type: string
+      responses:
+        "101":
+          description: Switching Protocols
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: WebRTC signaling websocket
+      tags:
+      - Signaling
+schemes:
+- http
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
