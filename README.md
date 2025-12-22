@@ -44,51 +44,6 @@ The server runs on `:8080` by default.
 
 - Swagger UI: `http://localhost:8080/swagger/index.html`
 
-## WebRTC Testing
-
-The project includes WebRTC data channel demos plus a built-in signaling service to demonstrate peer-to-peer communication.
-
-### Testing Data Channels
-
-1. **Start the Answer side** (receiver):
-```bash
-cd internal/test/data-channels/answer
-go run main.go
-```
-
-2. **Start the Offer side** (sender) in another terminal:
-```bash
-cd internal/test/data-channels/offer
-go run main.go
-```
-
-3. **Exchange SDP offers/answers**:
-   - The offer program will print an encoded offer
-   - Copy and paste it into the answer program
-   - The answer program will print an encoded answer
-   - Copy and paste it back into the offer program
-   - Once connected, the data channel will open and messages will be transmitted
-
-### WebSocket signaling service
-
-- **Endpoint**: `ws://localhost:8080/ws/p2p/{roomIdentity}/{userIdentity}`
-- **Optional auth**: append `?token=<JWT>` to enforce authenticated joins; omit for local demos.
-- **Message envelope**:
-  ```json
-  {
-    "user_identity": "alice",
-    "room_identity": "room-123",
-    "key": "offer_sdp",
-    "value": { "...": "RTCSessionDescription" },
-    "target_identity": "bob" // optional, broadcast when omitted
-  }
-  ```
-- **Server-emitted events**:
-  - `peer_list` – initial peer snapshot `{ "peers": ["bob"] }`
-  - `peer_joined` / `peer_left` – lifecycle notifications with the affected identity
-  - `error` – validation or routing errors
-
-The HTML demos under `internal/test/screen-share-plus` already connect to this endpoint. Open both `offer.html` and `answer.html` in a browser to try collaborative screen sharing without manual SDP exchange.
 
 ### How it works
 
@@ -96,15 +51,6 @@ The HTML demos under `internal/test/screen-share-plus` already connect to this e
 - **Answer side**: Receives the data channel, creates an answer, and displays received messages
 - **SDP Encoding**: Uses base64-encoded JSON for SDP exchange via helper functions
 
-## API Endpoints
-
-### Public Endpoints
-
-- `GET /ping` - Health check
-
-### Authentication
-
-- `POST /auth/user/login` - User login
 
 ### Room Management (Requires Authentication)
 
@@ -119,24 +65,7 @@ The HTML demos under `internal/test/screen-share-plus` already connect to this e
 - `POST /auth/room/share/stop` - 停止屏幕共享（共享者或房主可调用）
 - `GET /auth/room/share/status` - 查询当前屏幕共享状态
 
-## Project Structure
 
-```
-GoMeetings/
-├── internal/
-│   ├── models/          # Data models
-│   ├── server/          # Server code
-│   │   ├── router/      # Route configuration
-│   │   └── service/     # Business logic
-│   ├── middlewares/     # Middlewares
-│   ├── helper/          # Helper functions (including WebRTC Encode/Decode)
-│   ├── define/          # Constants
-│   └── test/            # Test programs
-│       └── data-channels/
-│           ├── offer/   # WebRTC offer side test
-│           └── answer/ # WebRTC answer side test
-└── go.mod
-```
 
 ## License
 
