@@ -1,97 +1,4 @@
 basePath: /
-definitions:
-  service.RoomCreateRequest:
-    properties:
-      begin_at:
-        type: integer
-      display_name:
-        type: string
-      end_at:
-        type: integer
-      join_code:
-        type: string
-      name:
-        type: string
-      short_code:
-        type: string
-    required:
-    - begin_at
-    - end_at
-    - name
-    type: object
-  service.RoomEditRequest:
-    properties:
-      begin_at:
-        type: integer
-      end_at:
-        type: integer
-      identity:
-        type: string
-      join_code:
-        type: string
-      name:
-        type: string
-      short_code:
-        type: string
-    required:
-    - begin_at
-    - end_at
-    - identity
-    - name
-    type: object
-  service.RoomJoinRequest:
-    properties:
-      display_name:
-        type: string
-      identity:
-        type: string
-      join_code:
-        type: string
-    required:
-    - display_name
-    - identity
-    - join_code
-    type: object
-  service.RoomLeaveRequest:
-    properties:
-      identity:
-        type: string
-    required:
-    - identity
-    type: object
-  service.ScreenShareStartRequest:
-    properties:
-      identity:
-        type: string
-      stream_id:
-        type: string
-    required:
-    - identity
-    type: object
-  service.ScreenShareStopRequest:
-    properties:
-      identity:
-        type: string
-    required:
-    - identity
-    type: object
-  service.UserLoginRequest:
-    properties:
-      password:
-        type: string
-      username:
-        type: string
-    type: object
-  service.UserRegisterRequest:
-    properties:
-      password:
-        type: string
-      username:
-        type: string
-    required:
-    - password
-    - username
-    type: object
 info:
   contact: {}
   description: Meeting management & WebRTC signaling backend
@@ -101,14 +8,35 @@ paths:
   /auth/room/create:
     post:
       consumes:
-      - application/json
+      - multipart/form-data
       parameters:
-      - description: Room payload
-        in: body
-        name: payload
+      - description: Room name
+        in: formData
+        name: name
         required: true
-        schema:
-          $ref: '#/definitions/service.RoomCreateRequest'
+        type: string
+      - description: Begin time (ms)
+        in: formData
+        name: begin_at
+        required: true
+        type: integer
+      - description: End time (ms)
+        in: formData
+        name: end_at
+        required: true
+        type: integer
+      - description: Custom join code
+        in: formData
+        name: join_code
+        type: string
+      - description: Short code
+        in: formData
+        name: short_code
+        type: string
+      - description: Owner display name
+        in: formData
+        name: display_name
+        type: string
       produces:
       - application/json
       responses:
@@ -159,14 +87,36 @@ paths:
   /auth/room/edit:
     put:
       consumes:
-      - application/json
+      - multipart/form-data
       parameters:
-      - description: Room payload
-        in: body
-        name: payload
+      - description: Room identity
+        in: formData
+        name: identity
         required: true
-        schema:
-          $ref: '#/definitions/service.RoomEditRequest'
+        type: string
+      - description: Room name
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Begin time (ms)
+        in: formData
+        name: begin_at
+        required: true
+        type: integer
+      - description: End time (ms)
+        in: formData
+        name: end_at
+        required: true
+        type: integer
+      - description: Custom join code
+        in: formData
+        name: join_code
+        type: string
+      - description: Short code
+        in: formData
+        name: short_code
+        type: string
       produces:
       - application/json
       responses:
@@ -189,14 +139,23 @@ paths:
   /auth/room/join:
     post:
       consumes:
-      - application/json
+      - multipart/form-data
       parameters:
-      - description: Join payload
-        in: body
-        name: payload
+      - description: Room identity
+        in: formData
+        name: identity
         required: true
-        schema:
-          $ref: '#/definitions/service.RoomJoinRequest'
+        type: string
+      - description: Display name
+        in: formData
+        name: display_name
+        required: true
+        type: string
+      - description: Join code
+        in: formData
+        name: join_code
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -220,14 +179,13 @@ paths:
   /auth/room/leave:
     post:
       consumes:
-      - application/json
+      - multipart/form-data
       parameters:
-      - description: Leave payload
-        in: body
-        name: payload
+      - description: Room identity
+        in: formData
+        name: identity
         required: true
-        schema:
-          $ref: '#/definitions/service.RoomLeaveRequest'
+        type: string
       produces:
       - application/json
       responses:
@@ -313,14 +271,17 @@ paths:
   /auth/room/share/start:
     post:
       consumes:
-      - application/json
+      - multipart/form-data
       parameters:
-      - description: Screen share start payload
-        in: body
-        name: payload
+      - description: Room identity
+        in: formData
+        name: identity
         required: true
-        schema:
-          $ref: '#/definitions/service.ScreenShareStartRequest'
+        type: string
+      - description: Client-defined stream ID
+        in: formData
+        name: stream_id
+        type: string
       produces:
       - application/json
       responses:
@@ -359,14 +320,13 @@ paths:
   /auth/room/share/stop:
     post:
       consumes:
-      - application/json
+      - multipart/form-data
       parameters:
-      - description: Screen share stop payload
-        in: body
-        name: payload
+      - description: Room identity
+        in: formData
+        name: identity
         required: true
-        schema:
-          $ref: '#/definitions/service.ScreenShareStopRequest'
+        type: string
       produces:
       - application/json
       responses:
@@ -381,18 +341,56 @@ paths:
       summary: Stop screen sharing
       tags:
       - Room
+  /auth/room/user-rooms:
+    get:
+      description: List meetings created or joined by the specified user identity
+      parameters:
+      - description: User identity (username or numeric ID)
+        in: query
+        name: user_identity
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: size
+        type: integer
+      - description: Keyword filter
+        in: query
+        name: keyword
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: User related rooms
+      tags:
+      - Room
   /auth/user/login:
     post:
       consumes:
-      - application/json
+      - multipart/form-data
       description: Authenticate user and returns JWT token
       parameters:
-      - description: Login payload
-        in: body
-        name: payload
+      - description: Username
+        in: formData
+        name: username
         required: true
-        schema:
-          $ref: '#/definitions/service.UserLoginRequest'
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -413,15 +411,19 @@ paths:
   /auth/user/register:
     post:
       consumes:
-      - application/json
+      - multipart/form-data
       description: Create a user account and return JWT
       parameters:
-      - description: Register payload
-        in: body
-        name: payload
+      - description: Username
+        in: formData
+        name: username
         required: true
-        schema:
-          $ref: '#/definitions/service.UserRegisterRequest'
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -453,6 +455,30 @@ paths:
       summary: Health check
       tags:
       - Public
+  /room/generate-code:
+    get:
+      consumes:
+      - application/json
+      description: Generates a random code of the given length using the codeAlphabet
+      parameters:
+      - description: Code length
+        in: query
+        name: length
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Random code
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Generate a random code
+      tags:
+      - Room
   /ws/p2p/{roomIdentity}/{userIdentity}:
     get:
       description: Upgrade HTTP to WebSocket for SDP/ICE exchange

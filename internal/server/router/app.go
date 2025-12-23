@@ -35,6 +35,7 @@ func Router() *gin.Engine {
 	room.POST("/join", service.RoomJoin)
 	room.POST("/leave", service.RoomLeave)
 	room.GET("/members", service.RoomMembers)
+	room.GET("/user-rooms", service.RoomUserRooms)
 	room.POST("/share/start", service.RoomShareStart)
 	room.POST("/share/stop", service.RoomShareStop)
 	room.GET("/share/status", service.RoomShareStatus)

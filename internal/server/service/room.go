@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -23,6 +24,15 @@ const (
 	maxCodeCollisionRetries = 5
 )
 
+// @Summary Generate a random code
+// @Description Generates a random code of the given length using the codeAlphabet
+// @Tags Room
+// @Accept json
+// @Produce json
+// @Param length query int false "Code length"
+// @Success 200 {string} string "Random code"
+// @Failure 500 {string} string "Internal server error"
+// @Router /room/generate-code [get]
 func generateCode(length int) string {
 	if length <= 0 {
 		length = defaultJoinCodeLength
@@ -65,7 +75,119 @@ func RoomList(c *gin.Context) {
 		req.Size = 20
 	}
 
-	query := models.DB.Model(&models.RoomBasic{})
+	var userRooms []models.RoomUser
+	if err := models.DB.Where("uid = ?", uc.Id).Find(&userRooms).Error; err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "system error: " + err.Error()})
+		return
+	}
+	joined := make(map[uint]bool, len(userRooms))
+	for _, ur := range userRooms {
+		joined[ur.Rid] = true
+	}
+
+	roomMembersReply(c, uc.Id, req.Identity)
+}
+
+func roomMembersReply(c *gin.Context, uid uint, identity string) {
+	if identity == "" {
+		c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "identity is required"})
+		return
+	}
+	var room models.RoomBasic
+	if err := models.DB.Where("identify = ?", identity).First(&room).Error; err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "room not found"})
+		return
+	}
+
+	var membership models.RoomUser
+	if err := models.DB.Where("rid = ? AND uid = ?", room.ID, uid).First(&membership).Error; err != nil {
+		if room.CreateID != uid {
+			c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "no permission"})
+			return
+		}
+	}
+
+	var members []models.RoomUser
+	if err := models.DB.Where("rid = ?", room.ID).Find(&members).Error; err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "system error: " + err.Error()})
+		return
+	}
+
+	memberList := make([]RoomMember, 0, len(members))
+	for _, m := range members {
+		memberList = append(memberList, RoomMember{
+			UserID:      m.Uid,
+			DisplayName: m.DisplayName,
+			JoinedAt:    m.CreatedAt.UnixMilli(),
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"code": 200,
+		"data": RoomListReply{
+			Total: int64(len(memberList)),
+			List: []RoomListItem{
+				{
+					Identity: room.Identify,
+					Name:     room.Name,
+					BeginAt:  room.BeginAt,
+					EndAt:    room.EndAt,
+					CreateID: room.CreateID,
+					Joined:   true,
+					Members:  memberList,
+				},
+			},
+		},
+	})
+}
+
+// RoomUserRooms godoc
+// @Summary User related rooms
+// @Description List meetings created or joined by the specified user identity
+// @Tags Room
+// @Security BearerAuth
+// @Produce json
+// @Param user_identity query string true "User identity (username or numeric ID)"
+// @Param page query int false "Page number"
+// @Param size query int false "Page size"
+// @Param keyword query string false "Keyword filter"
+// @Success 200 {object} map[string]interface{}
+// @Router /auth/room/user-rooms [get]
+func RoomUserRooms(c *gin.Context) {
+	req := UserRoomListRequest{}
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "params error: " + err.Error()})
+		return
+	}
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.Size <= 0 {
+		req.Size = 20
+	}
+
+	targetID, err := resolveUserIdentity(req.UserIdentity)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "user not found"})
+		return
+	}
+
+	var userRooms []models.RoomUser
+	if err := models.DB.Where("uid = ?", targetID).Find(&userRooms).Error; err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "system error: " + err.Error()})
+		return
+	}
+	joined := make(map[uint]bool, len(userRooms))
+	roomIDs := make([]uint, 0, len(userRooms))
+	for _, ur := range userRooms {
+		joined[ur.Rid] = true
+		roomIDs = append(roomIDs, ur.Rid)
+	}
+
+	query := models.DB.Model(&models.RoomBasic{}).Where("create_id = ?", targetID)
+	if len(roomIDs) > 0 {
+		query = query.Or("id IN ?", roomIDs)
+	}
 	if req.Keyword != "" {
 		query = query.Where("name LIKE ?", "%"+req.Keyword+"%")
 	}
@@ -83,14 +205,14 @@ func RoomList(c *gin.Context) {
 		return
 	}
 
-	var userRooms []models.RoomUser
-	if err := models.DB.Where("uid = ?", uc.Id).Find(&userRooms).Error; err != nil {
+	roomIDList := make([]uint, 0, len(rooms))
+	for _, room := range rooms {
+		roomIDList = append(roomIDList, room.ID)
+	}
+	memberMap, err := loadMembersForRooms(roomIDList)
+	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "system error: " + err.Error()})
 		return
-	}
-	joined := make(map[uint]bool, len(userRooms))
-	for _, ur := range userRooms {
-		joined[ur.Rid] = true
 	}
 
 	list := make([]RoomListItem, 0, len(rooms))
@@ -101,7 +223,8 @@ func RoomList(c *gin.Context) {
 			BeginAt:  room.BeginAt,
 			EndAt:    room.EndAt,
 			CreateID: room.CreateID,
-			Joined:   joined[room.ID],
+			Joined:   joined[room.ID] || room.CreateID == targetID,
+			Members:  memberMap[room.ID],
 		})
 	}
 
@@ -118,16 +241,21 @@ func RoomList(c *gin.Context) {
 // @Summary Create room
 // @Tags Room
 // @Security BearerAuth
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
-// @Param payload body RoomCreateRequest true "Room payload"
+// @Param name formData string true "Room name"
+// @Param begin_at formData integer true "Begin time (ms)"
+// @Param end_at formData integer true "End time (ms)"
+// @Param join_code formData string false "Custom join code"
+// @Param short_code formData string false "Short code"
+// @Param display_name formData string false "Owner display name"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]string
 // @Router /auth/room/create [post]
 func RoomCreate(c *gin.Context) {
 	uc := c.MustGet("user_claims").(*helper.UserClaims)
 	req := RoomCreateRequest{}
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "params error: " + err.Error()})
 		return
 	}
@@ -187,16 +315,21 @@ func RoomCreate(c *gin.Context) {
 // @Summary Edit room
 // @Tags Room
 // @Security BearerAuth
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
-// @Param payload body RoomEditRequest true "Room payload"
+// @Param identity formData string true "Room identity"
+// @Param name formData string true "Room name"
+// @Param begin_at formData integer true "Begin time (ms)"
+// @Param end_at formData integer true "End time (ms)"
+// @Param join_code formData string false "Custom join code"
+// @Param short_code formData string false "Short code"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]string
 // @Router /auth/room/edit [put]
 func RoomEdit(c *gin.Context) {
 	uc := c.MustGet("user_claims").(*helper.UserClaims)
 	req := RoomEditRequest{}
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "params error: " + err.Error()})
 		return
 	}
@@ -288,16 +421,18 @@ func RoomDelete(c *gin.Context) {
 // @Summary Join room
 // @Tags Room
 // @Security BearerAuth
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
-// @Param payload body RoomJoinRequest true "Join payload"
+// @Param identity formData string true "Room identity"
+// @Param display_name formData string true "Display name"
+// @Param join_code formData string true "Join code"
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} map[string]string
 // @Router /auth/room/join [post]
 func RoomJoin(c *gin.Context) {
 	uc := c.MustGet("user_claims").(*helper.UserClaims)
 	req := RoomJoinRequest{}
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "params error: " + err.Error()})
 		return
 	}
@@ -348,16 +483,16 @@ func RoomJoin(c *gin.Context) {
 // @Summary Leave room
 // @Tags Room
 // @Security BearerAuth
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
-// @Param payload body RoomLeaveRequest true "Leave payload"
+// @Param identity formData string true "Room identity"
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} map[string]string
 // @Router /auth/room/leave [post]
 func RoomLeave(c *gin.Context) {
 	uc := c.MustGet("user_claims").(*helper.UserClaims)
 	req := RoomLeaveRequest{}
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "params error: " + err.Error()})
 		return
 	}
@@ -472,19 +607,53 @@ func ensureRoomJoinWindow(room *models.RoomBasic, now time.Time) error {
 	return nil
 }
 
+func resolveUserIdentity(identity string) (uint, error) {
+	var user models.UserBasic
+	if id, err := strconv.ParseUint(identity, 10, 64); err == nil {
+		if err := models.DB.First(&user, id).Error; err != nil {
+			return 0, err
+		}
+		return user.ID, nil
+	}
+	if err := models.DB.Where("username = ?", identity).First(&user).Error; err != nil {
+		return 0, err
+	}
+	return user.ID, nil
+}
+
+func loadMembersForRooms(roomIDs []uint) (map[uint][]RoomMember, error) {
+	result := make(map[uint][]RoomMember)
+	if len(roomIDs) == 0 {
+		return result, nil
+	}
+	var roomMembers []models.RoomUser
+	if err := models.DB.Where("rid IN ?", roomIDs).Find(&roomMembers).Error; err != nil {
+		return nil, err
+	}
+	for _, m := range roomMembers {
+		result[m.Rid] = append(result[m.Rid], RoomMember{
+			UserID:      m.Uid,
+			DisplayName: m.DisplayName,
+			JoinedAt:    m.CreatedAt.UnixMilli(),
+		})
+	}
+	return result, nil
+}
+
 // RoomShareStart godoc
 // @Summary Start screen sharing
 // @Tags Room
 // @Security BearerAuth
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
-// @Param payload body ScreenShareStartRequest true "Screen share start payload"
+// @Param identity formData string true "Room identity"
+// @Param stream_id formData string false "Client-defined stream ID"
 // @Success 200 {object} map[string]string
 // @Router /auth/room/share/start [post]
 func RoomShareStart(c *gin.Context) {
 	uc := c.MustGet("user_claims").(*helper.UserClaims)
 	var req ScreenShareStartRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "params error: " + err.Error()})
 		return
 	}
@@ -558,15 +727,15 @@ func RoomShareStart(c *gin.Context) {
 // @Summary Stop screen sharing
 // @Tags Room
 // @Security BearerAuth
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
-// @Param payload body ScreenShareStopRequest true "Screen share stop payload"
+// @Param identity formData string true "Room identity"
 // @Success 200 {object} map[string]string
 // @Router /auth/room/share/stop [post]
 func RoomShareStop(c *gin.Context) {
 	uc := c.MustGet("user_claims").(*helper.UserClaims)
 	var req ScreenShareStopRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "params error: " + err.Error()})
 		return
 	}

@@ -27,7 +27,6 @@ func GenerateUUID() string {
 	return uuid.NewV4().String()
 }
 
-// GenerateToken creates a signed JWT for the user.
 func GenerateToken(id uint, name string) (string, error) {
 	userClaim := &UserClaims{
 		Id:   id,
@@ -42,7 +41,6 @@ func GenerateToken(id uint, name string) (string, error) {
 	return tokenString, nil
 }
 
-// AnalyzeToken parses and validates a JWT string.
 func AnalyzeToken(tokenString string) (*UserClaims, error) {
 	userClaim := &UserClaims{}
 	claims, err := jwt.ParseWithClaims(tokenString, userClaim, func(token *jwt.Token) (interface{}, error) {

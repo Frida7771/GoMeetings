@@ -6,17 +6,24 @@
     <title>Screen Share</title>
 </head>
 <body>
+<div>
+    <label>Room Identity:
+        <input id="roomIdInput" type="text" placeholder="room identity">
+    </label>
+    <label>User Identity:
+        <input id="userIdInput" type="text" value="offer">
+    </label>
+    <label>JWT Token:
+        <input id="tokenInput" type="text" placeholder="optional token">
+    </label>
+    <button onclick="connectSignal()">连接信令</button>
+</div>
+
 <button onclick="createOffer()">点击开始共享</button>
 
 当前共享的区域: <br>
 <video id="localVideo" autoplay width="50%" height="auto"></video>
 
-<br>
-<label for="answer">ANSWER:</label><br>
-<textarea id="answer" placeholder="Paste answer SDP here" onchange="setAnswer()"></textarea>
-<br>
-<label for="answer_candidate">ANSWER CANDIDATE:</label><br>
-<textarea id="answer_candidate" placeholder="Paste answer candidate here" onchange="setAnswerCandidate()"></textarea>
 远程共享的区域: <br>
 <video id="remoteVideo" autoplay width="50%" height="auto"></video>
 
@@ -27,9 +34,9 @@
     // 3. 流添加到PC，创建 offer
     // 4. 监听 stream
 
-    const roomIdentity = '123456';
-    const userIdentity = 'offer';
-    let ws = new WebSocket('ws://127.0.0.1:8080/ws/p2p/'+roomIdentity+'/' +userIdentity)
+    let roomIdentity = '';
+    let userIdentity = 'offer';
+    let ws = null;
 
     // {
     //     'user_identity': 'offer',
@@ -38,18 +45,36 @@
     //     'value': 'any'
     // }
 
-    ws.addEventListener('message', (event) => {
+    function connectSignal() {
+        const roomInput = document.getElementById('roomIdInput').value.trim();
+        const userInput = document.getElementById('userIdInput').value.trim();
+        const token = document.getElementById('tokenInput').value.trim();
+        if (!roomInput || !userInput) {
+            alert('请输入房间 ID 和用户 ID');
+            return;
+        }
+        roomIdentity = roomInput;
+        userIdentity = userInput;
+        if (ws) {
+            ws.close();
+        }
+        const wsUrl = `ws://127.0.0.1:8080/ws/p2p/${roomIdentity}/${userIdentity}` + (token ? `?token=${encodeURIComponent(token)}` : '');
+        ws = new WebSocket(wsUrl);
+        ws.addEventListener('message', handleSignalMessage);
+        ws.addEventListener('open', () => console.log('signal connected'));
+        ws.addEventListener('close', () => console.log('signal closed'));
+    }
+
+    function handleSignalMessage(event) {
         console.log(event.data)
         let data = JSON.parse(event.data)
-        // sdp
         if (data.key === 'answer_sdp' && data.user_identity !== userIdentity) {
             pc.setRemoteDescription(data.value);
         }
-        // candidate
         if (data.key === 'answer_candidate' && data.user_identity !== userIdentity) {
             pc.addIceCandidate(data.value);
         }
-    })
+    }
 
     let pc = new RTCPeerConnection();
 
@@ -62,6 +87,10 @@
     pc.onicecandidate = function (e) {
         if (e.candidate) {
             console.log('offer candidate', JSON.stringify(e.candidate));
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('请先连接信令服务');
+                return;
+            }
             ws.send(JSON.stringify({
                 'user_identity': userIdentity,
                 'room_identity': roomIdentity,
@@ -72,6 +101,10 @@
     };
 
     function createOffer() {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            alert('请先连接信令服务');
+            return;
+        }
         navigator.mediaDevices.getDisplayMedia().then(stream => {
             document.getElementById('localVideo').srcObject = stream;
 
@@ -92,15 +125,6 @@
         })
     }
 
-    function setAnswer() {
-        let answer = JSON.parse(document.getElementById('answer').value);
-        pc.setRemoteDescription({'type': 'answer', 'sdp': answer});
-    }
-
-    function setAnswerCandidate() {
-        let answerCandidate = JSON.parse(document.getElementById('answer_candidate').value);
-        pc.addIceCandidate(answerCandidate);
-    }
 </script>
 </body>
 </html>

@@ -23,7 +23,7 @@ const docTemplate = `{
                     }
                 ],
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -34,13 +34,43 @@ const docTemplate = `{
                 "summary": "Create room",
                 "parameters": [
                     {
-                        "description": "Room payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/service.RoomCreateRequest"
-                        }
+                        "type": "string",
+                        "description": "Room name",
+                        "name": "name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Begin time (ms)",
+                        "name": "begin_at",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "End time (ms)",
+                        "name": "end_at",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom join code",
+                        "name": "join_code",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Short code",
+                        "name": "short_code",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Owner display name",
+                        "name": "display_name",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -116,7 +146,7 @@ const docTemplate = `{
                     }
                 ],
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -127,13 +157,44 @@ const docTemplate = `{
                 "summary": "Edit room",
                 "parameters": [
                     {
-                        "description": "Room payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/service.RoomEditRequest"
-                        }
+                        "type": "string",
+                        "description": "Room identity",
+                        "name": "identity",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Room name",
+                        "name": "name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Begin time (ms)",
+                        "name": "begin_at",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "End time (ms)",
+                        "name": "end_at",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom join code",
+                        "name": "join_code",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Short code",
+                        "name": "short_code",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -164,7 +225,7 @@ const docTemplate = `{
                     }
                 ],
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -175,13 +236,25 @@ const docTemplate = `{
                 "summary": "Join room",
                 "parameters": [
                     {
-                        "description": "Join payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/service.RoomJoinRequest"
-                        }
+                        "type": "string",
+                        "description": "Room identity",
+                        "name": "identity",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Display name",
+                        "name": "display_name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Join code",
+                        "name": "join_code",
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -214,7 +287,7 @@ const docTemplate = `{
                     }
                 ],
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -225,13 +298,11 @@ const docTemplate = `{
                 "summary": "Leave room",
                 "parameters": [
                     {
-                        "description": "Leave payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/service.RoomLeaveRequest"
-                        }
+                        "type": "string",
+                        "description": "Room identity",
+                        "name": "identity",
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -362,7 +433,7 @@ const docTemplate = `{
                     }
                 ],
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -373,13 +444,17 @@ const docTemplate = `{
                 "summary": "Start screen sharing",
                 "parameters": [
                     {
-                        "description": "Screen share start payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/service.ScreenShareStartRequest"
-                        }
+                        "type": "string",
+                        "description": "Room identity",
+                        "name": "identity",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Client-defined stream ID",
+                        "name": "stream_id",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -437,7 +512,7 @@ const docTemplate = `{
                     }
                 ],
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -448,13 +523,11 @@ const docTemplate = `{
                 "summary": "Stop screen sharing",
                 "parameters": [
                     {
-                        "description": "Screen share stop payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/service.ScreenShareStopRequest"
-                        }
+                        "type": "string",
+                        "description": "Room identity",
+                        "name": "identity",
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -474,7 +547,7 @@ const docTemplate = `{
             "post": {
                 "description": "Authenticate user and returns JWT token",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -485,13 +558,18 @@ const docTemplate = `{
                 "summary": "User login",
                 "parameters": [
                     {
-                        "description": "Login payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/service.UserLoginRequest"
-                        }
+                        "type": "string",
+                        "description": "Username",
+                        "name": "username",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password",
+                        "name": "password",
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -518,7 +596,7 @@ const docTemplate = `{
             "post": {
                 "description": "Create a user account and return JWT",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -529,13 +607,18 @@ const docTemplate = `{
                 "summary": "User register",
                 "parameters": [
                     {
-                        "description": "Register payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/service.UserRegisterRequest"
-                        }
+                        "type": "string",
+                        "description": "Username",
+                        "name": "username",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password",
+                        "name": "password",
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -575,6 +658,43 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/room/generate-code": {
+            "get": {
+                "description": "Generates a random code of the given length using the codeAlphabet",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Room"
+                ],
+                "summary": "Generate a random code",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Code length",
+                        "name": "length",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Random code",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -635,146 +755,6 @@ const docTemplate = `{
                             }
                         }
                     }
-                }
-            }
-        }
-    },
-    "definitions": {
-        "service.RoomCreateRequest": {
-            "type": "object",
-            "required": [
-                "begin_at",
-                "end_at",
-                "name"
-            ],
-            "properties": {
-                "begin_at": {
-                    "type": "integer"
-                },
-                "display_name": {
-                    "type": "string"
-                },
-                "end_at": {
-                    "type": "integer"
-                },
-                "join_code": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "short_code": {
-                    "type": "string"
-                }
-            }
-        },
-        "service.RoomEditRequest": {
-            "type": "object",
-            "required": [
-                "begin_at",
-                "end_at",
-                "identity",
-                "name"
-            ],
-            "properties": {
-                "begin_at": {
-                    "type": "integer"
-                },
-                "end_at": {
-                    "type": "integer"
-                },
-                "identity": {
-                    "type": "string"
-                },
-                "join_code": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "short_code": {
-                    "type": "string"
-                }
-            }
-        },
-        "service.RoomJoinRequest": {
-            "type": "object",
-            "required": [
-                "display_name",
-                "identity",
-                "join_code"
-            ],
-            "properties": {
-                "display_name": {
-                    "type": "string"
-                },
-                "identity": {
-                    "type": "string"
-                },
-                "join_code": {
-                    "type": "string"
-                }
-            }
-        },
-        "service.RoomLeaveRequest": {
-            "type": "object",
-            "required": [
-                "identity"
-            ],
-            "properties": {
-                "identity": {
-                    "type": "string"
-                }
-            }
-        },
-        "service.ScreenShareStartRequest": {
-            "type": "object",
-            "required": [
-                "identity"
-            ],
-            "properties": {
-                "identity": {
-                    "type": "string"
-                },
-                "stream_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "service.ScreenShareStopRequest": {
-            "type": "object",
-            "required": [
-                "identity"
-            ],
-            "properties": {
-                "identity": {
-                    "type": "string"
-                }
-            }
-        },
-        "service.UserLoginRequest": {
-            "type": "object",
-            "properties": {
-                "password": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "service.UserRegisterRequest": {
-            "type": "object",
-            "required": [
-                "password",
-                "username"
-            ],
-            "properties": {
-                "password": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
                 }
             }
         }

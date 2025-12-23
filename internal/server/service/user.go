@@ -15,15 +15,16 @@ import (
 // @Summary User login
 // @Description Authenticate user and returns JWT token
 // @Tags Auth
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
-// @Param payload body UserLoginRequest true "Login payload"
+// @Param username formData string true "Username"
+// @Param password formData string true "Password"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]string
 // @Router /auth/user/login [post]
 func UserLogin(c *gin.Context) {
 	in := new(UserLoginRequest)
-	err := c.ShouldBindJSON(in)
+	err := c.ShouldBind(in)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"code": -1,
@@ -71,15 +72,16 @@ func UserLogin(c *gin.Context) {
 // @Summary User register
 // @Description Create a user account and return JWT
 // @Tags Auth
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
-// @Param payload body UserRegisterRequest true "Register payload"
+// @Param username formData string true "Username"
+// @Param password formData string true "Password"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]string
 // @Router /auth/user/register [post]
 func UserRegister(c *gin.Context) {
 	var req UserRegisterRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"code": -1,
 			"msg":  "params error: " + err.Error(),

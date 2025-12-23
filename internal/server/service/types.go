@@ -12,13 +12,13 @@ type MeetingCreateRequest struct {
 }
 
 type UserLoginRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string `json:"username" form:"username"`
+	Password string `json:"password" form:"password"`
 }
 
 type UserRegisterRequest struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	Username string `json:"username" form:"username" binding:"required"`
+	Password string `json:"password" form:"password" binding:"required"`
 }
 
 type MeetingEditRequest struct {
@@ -38,46 +38,54 @@ type MeetingListReply struct {
 }
 
 type RoomCreateRequest struct {
-	Name        string `json:"name" binding:"required"`
-	BeginAt     int64  `json:"begin_at" binding:"required"`
-	EndAt       int64  `json:"end_at" binding:"required"`
-	JoinCode    string `json:"join_code" binding:"omitempty"`
-	ShortCode   string `json:"short_code" binding:"omitempty"`
-	DisplayName string `json:"display_name" binding:"omitempty"`
+	Name        string `json:"name" form:"name" binding:"required"`
+	BeginAt     int64  `json:"begin_at" form:"begin_at" binding:"required"`
+	EndAt       int64  `json:"end_at" form:"end_at" binding:"required"`
+	JoinCode    string `json:"join_code" form:"join_code" binding:"omitempty"`
+	ShortCode   string `json:"short_code" form:"short_code" binding:"omitempty"`
+	DisplayName string `json:"display_name" form:"display_name" binding:"omitempty"`
 }
 
 type RoomEditRequest struct {
-	Identify  string `json:"identity" binding:"required"`
-	Name      string `json:"name" binding:"required"`
-	BeginAt   int64  `json:"begin_at" binding:"required"`
-	EndAt     int64  `json:"end_at" binding:"required"`
-	JoinCode  string `json:"join_code" binding:"omitempty"`
-	ShortCode string `json:"short_code" binding:"omitempty"`
+	Identify  string `json:"identity" form:"identity" binding:"required"`
+	Name      string `json:"name" form:"name" binding:"required"`
+	BeginAt   int64  `json:"begin_at" form:"begin_at" binding:"required"`
+	EndAt     int64  `json:"end_at" form:"end_at" binding:"required"`
+	JoinCode  string `json:"join_code" form:"join_code" binding:"omitempty"`
+	ShortCode string `json:"short_code" form:"short_code" binding:"omitempty"`
 }
 
 type RoomListRequest struct {
-	Page    int    `form:"page"`
-	Size    int    `form:"size"`
-	Keyword string `form:"keyword"`
+	Page     int    `form:"page"`
+	Size     int    `form:"size"`
+	Keyword  string `form:"keyword"`
+	Identity string `form:"identity"`
+}
+
+type UserRoomListRequest struct {
+	UserIdentity string `form:"user_identity" binding:"required"`
+	Page         int    `form:"page"`
+	Size         int    `form:"size"`
+	Keyword      string `form:"keyword"`
 }
 
 type RoomJoinRequest struct {
-	Identity    string `json:"identity" binding:"required"`
-	DisplayName string `json:"display_name" binding:"required"`
-	JoinCode    string `json:"join_code" binding:"required"`
+	Identity    string `json:"identity" form:"identity" binding:"required"`
+	DisplayName string `json:"display_name" form:"display_name" binding:"required"`
+	JoinCode    string `json:"join_code" form:"join_code" binding:"required"`
 }
 
 type RoomLeaveRequest struct {
-	Identity string `json:"identity" binding:"required"`
+	Identity string `json:"identity" form:"identity" binding:"required"`
 }
 
 type ScreenShareStartRequest struct {
-	Identity string `json:"identity" binding:"required"`
-	StreamID string `json:"stream_id" binding:"omitempty"`
+	Identity string `json:"identity" form:"identity" binding:"required"`
+	StreamID string `json:"stream_id" form:"stream_id" binding:"omitempty"`
 }
 
 type ScreenShareStopRequest struct {
-	Identity string `json:"identity" binding:"required"`
+	Identity string `json:"identity" form:"identity" binding:"required"`
 }
 
 type ScreenShareStatusReply struct {
@@ -90,12 +98,13 @@ type ScreenShareStatusReply struct {
 }
 
 type RoomListItem struct {
-	Identity string    `json:"identity"`
-	Name     string    `json:"name"`
-	BeginAt  time.Time `json:"begin_at"`
-	EndAt    time.Time `json:"end_at"`
-	CreateID uint      `json:"create_id"`
-	Joined   bool      `json:"joined"`
+	Identity string       `json:"identity"`
+	Name     string       `json:"name"`
+	BeginAt  time.Time    `json:"begin_at"`
+	EndAt    time.Time    `json:"end_at"`
+	CreateID uint         `json:"create_id"`
+	Joined   bool         `json:"joined"`
+	Members  []RoomMember `json:"members,omitempty"`
 }
 
 type RoomListReply struct {

@@ -6,10 +6,19 @@
     <title>Screen Share</title>
 </head>
 <body>
-<label for="offer">OFFER:</label><br>
-<textarea id="offer" placeholder="Paste offer SDP here" onchange="createAnswer()"></textarea><br>
-<label for="offer_candidate">OFFER CANDIDATE:</label><br>
-<textarea id="offer_candidate" placeholder="Paste offer candidate here" onchange="setOfferCandidate()"></textarea>
+<div>
+    <label>Room Identity:
+        <input id="roomIdInput" type="text" placeholder="room identity">
+    </label>
+    <label>User Identity:
+        <input id="userIdInput" type="text" value="answer">
+    </label>
+    <label>JWT Token:
+        <input id="tokenInput" type="text" placeholder="optional token">
+    </label>
+    <button onclick="connectSignal()">连接信令</button>
+</div>
+
 <button id="receive" onclick="receive()" style="display: none">接听</button>
 
 当前共享的区域: <br>
@@ -25,23 +34,41 @@
     // 3. 流添加到PC，创建 answer
     // 4. 异步监听 stream
 
-    const roomIdentity = '123456';
-    const userIdentity = 'answer';
+    let roomIdentity = '';
+    let userIdentity = 'answer';
     let offerSdp;
-    let ws = new WebSocket('ws://127.0.0.1:8080/ws/p2p/'+roomIdentity+'/' +userIdentity)
+    let ws = null;
 
-    ws.addEventListener('message', (event) => {
+    function connectSignal() {
+        const roomInput = document.getElementById('roomIdInput').value.trim();
+        const userInput = document.getElementById('userIdInput').value.trim();
+        const token = document.getElementById('tokenInput').value.trim();
+        if (!roomInput || !userInput) {
+            alert('请输入房间 ID 和用户 ID');
+            return;
+        }
+        roomIdentity = roomInput;
+        userIdentity = userInput;
+        if (ws) {
+            ws.close();
+        }
+        const wsUrl = `ws://127.0.0.1:8080/ws/p2p/${roomIdentity}/${userIdentity}` + (token ? `?token=${encodeURIComponent(token)}` : '');
+        ws = new WebSocket(wsUrl);
+        ws.addEventListener('message', handleSignalMessage);
+        ws.addEventListener('open', () => console.log('signal connected'));
+        ws.addEventListener('close', () => console.log('signal closed'));
+    }
+
+    function handleSignalMessage(event) {
         let data = JSON.parse(event.data)
-        // sdp
         if (data.key === 'offer_sdp' && data.user_identity !== userIdentity) {
             offerSdp = data.value;
             document.getElementById('receive').style.display = 'block';
         }
-        // candidate
         if (data.key === 'offer_candidate' && data.user_identity !== userIdentity) {
             pc.addIceCandidate(data.value);
         }
-    })
+    }
 
     let pc = new RTCPeerConnection(null);
 
@@ -54,6 +81,10 @@
     pc.onicecandidate = e => {
         if (e.candidate) {
             console.log('answer candidate', JSON.stringify(e.candidate));
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('请先连接信令服务');
+                return;
+            }
             ws.send(JSON.stringify({
                 'user_identity': userIdentity,
                 'room_identity': roomIdentity,
@@ -62,23 +93,6 @@
             }));
         }
     };
-
-    function createAnswer() {
-        navigator.mediaDevices.getDisplayMedia().then(stream => {
-            document.getElementById('localVideo').srcObject = stream;
-
-            stream.getTracks().forEach(track => {
-                pc.addTrack(track, stream);
-            });
-
-            let offer = JSON.parse(document.getElementById('offer').value);
-            pc.setRemoteDescription({'type': 'offer', 'sdp': offer});
-            pc.createAnswer().then(answer => {
-                console.log('answer', JSON.stringify(answer.sdp));
-                pc.setLocalDescription(answer);
-            });
-        })
-    }
 
     function receive() {
         navigator.mediaDevices.getDisplayMedia().then(stream => {
@@ -91,7 +105,7 @@
             pc.setRemoteDescription(offerSdp);
             pc.createAnswer().then(answer => {
                 pc.setLocalDescription(answer);
-                ws.send(JSON.stringify({
+            ws.send(JSON.stringify({
                     'user_identity': userIdentity,
                     'room_identity': roomIdentity,
                     'key': 'answer_sdp',
@@ -99,11 +113,6 @@
                 }));
             });
         })
-    }
-
-    function setOfferCandidate() {
-        let offerCandidate = JSON.parse(document.getElementById('offer_candidate').value);
-        pc.addIceCandidate(offerCandidate);
     }
 </script>
 
