@@ -80,12 +80,55 @@ func RoomList(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "system error: " + err.Error()})
 		return
 	}
+
 	joined := make(map[uint]bool, len(userRooms))
+	roomIDs := make([]uint, 0, len(userRooms))
 	for _, ur := range userRooms {
 		joined[ur.Rid] = true
+		roomIDs = append(roomIDs, ur.Rid)
 	}
 
-	roomMembersReply(c, uc.Id, req.Identity)
+	query := models.DB.Model(&models.RoomBasic{}).Where("create_id = ?", uc.Id)
+	if len(roomIDs) > 0 {
+		query = query.Or("id IN ?", roomIDs)
+	}
+	if req.Keyword != "" {
+		query = query.Where("name LIKE ?", "%"+req.Keyword+"%")
+	}
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "system error: " + err.Error()})
+		return
+	}
+
+	var rooms []models.RoomBasic
+	if err := query.Order("created_at desc").
+		Limit(req.Size).Offset((req.Page - 1) * req.Size).
+		Find(&rooms).Error; err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "system error: " + err.Error()})
+		return
+	}
+
+	list := make([]RoomListItem, 0, len(rooms))
+	for _, room := range rooms {
+		list = append(list, RoomListItem{
+			Identity: room.Identify,
+			Name:     room.Name,
+			BeginAt:  room.BeginAt,
+			EndAt:    room.EndAt,
+			CreateID: room.CreateID,
+			Joined:   joined[room.ID] || room.CreateID == uc.Id,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"code": 200,
+		"data": RoomListReply{
+			Total: total,
+			List:  list,
+		},
+	})
 }
 
 func roomMembersReply(c *gin.Context, uid uint, identity string) {
