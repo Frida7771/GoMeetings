@@ -15,6 +15,9 @@ func Router() *gin.Engine {
 
 	r.Use(middlewares.Cors())
 
+	// Static files for test pages
+	r.Static("/test", "./internal/test")
+
 	// Swagger UI
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
